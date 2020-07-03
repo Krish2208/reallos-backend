@@ -32,8 +32,8 @@ exports.signup = (req,res)=>{
             lastName: newUser.lastName,
             email: newUser.email,
             phone: newUser.phone,
+            role: newUser.role,
             state: newUser.state,
-            password: newUser.password,
             createdAt: new Date().toISOString()
         }
 
