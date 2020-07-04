@@ -13,7 +13,7 @@ const {
   updateTransaction,
   readTransaction,
 } = require("./handlers/transactions");
-const { addTodo } = require("./handlers/todo");
+const { addTodo, deleteTodo, readTodo } = require("./handlers/todo");
 
 //Signup Route
 app.post("/signup", signup);
@@ -31,5 +31,7 @@ app.get('/get-transaction/:tid', readTransaction);
 //app.post("/add-people", addPeople)
 
 app.post("/add-task", Auth, addTodo);
+app.delete('/delete-task/:taskid', Auth, deleteTodo);
+app.get('/get-task/:taskid', readTodo);
 
 exports.api = functions.https.onRequest(app); // Exporting the app
