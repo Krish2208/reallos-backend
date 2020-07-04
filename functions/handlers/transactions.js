@@ -1,4 +1,5 @@
 const { db } = require("../utils/admin");
+const firebase = require('../utils/firebaseConfig');
 
 exports.createTransaction = (req, res) => {
   const newTransaction = {
@@ -90,7 +91,7 @@ exports.readTransaction = (req, res) => {
   db.collection("transactions")
     .doc(newPeople.tid)
     .update({
-      people: firebase.firestore.FieldValue.arrayUnion(newPeople.person),
+      people: firebase.firestore.FieldValue.arrayUnion(),
     })
     .then(() => {
       return res.json({ message: `${newPeople.person[0]} added successfully` });

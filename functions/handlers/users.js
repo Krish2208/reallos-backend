@@ -1,10 +1,6 @@
 const {db} = require('../utils/admin');
 
-const config = require('../utils/firebaseConfig');
-
-const firebase = require('firebase');
-
-firebase.initializeApp(config);
+const firebase = require('../utils/firebaseConfig');
 
 exports.signup = (req,res)=>{
     const newUser = {
@@ -75,4 +71,22 @@ exports.login = (req,res)=>{
             return res.status(500).json({error: err.code})
         }
     })
+}
+
+exports.getUserDetails = (req,res) => {
+    const userid = req.user.uid;
+    db.collection("users").doc(userid).get()
+    .then((doc) => {
+        if (doc.exists) {
+          console.log(`User ${userid} Data : `, doc.data());
+          return res.json(doc.data());
+        } else {
+          console.log("User does not exists");
+          return res.json({ error: "User does not exists" });
+        }
+      })
+      .catch((err) => {
+        console.log(err);
+        return res.status(500).json({ error: err.code });
+      });
 }
