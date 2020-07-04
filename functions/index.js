@@ -22,14 +22,14 @@ app.post("/signup", signup);
 app.post("/login", login);
 
 // Get User Details
-app.post("/user-details", Auth ,getUserDetails);
+app.get('/user-details', Auth ,getUserDetails);
 
-app.post("/create-transaction", createTransaction);
-app.post("/delete-transaction", deleteTransaction);
-app.post("/update-transaction", updateTransaction);
-app.post("/get-transaction", readTransaction);
+app.post("/create-transaction", Auth ,createTransaction);
+app.delete('/delete-transaction/:tid', Auth ,deleteTransaction);
+app.put("/update-transaction/:tid", Auth ,updateTransaction);
+app.get('/get-transaction/:tid', readTransaction);
 //app.post("/add-people", addPeople)
 
-app.post("/add-task",addTodo);
+app.post("/add-task", Auth, addTodo);
 
 exports.api = functions.https.onRequest(app); // Exporting the app

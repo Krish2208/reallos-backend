@@ -7,6 +7,7 @@ exports.addTodo = (req, res) => {
     description: req.body.description,
     date: req.body.date,
     assignedTo: req.body.assignedTo,
+    assignedBy: req.user.uid
   };
 
   db.collection("transactions")

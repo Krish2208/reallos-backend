@@ -1,5 +1,5 @@
 const { db } = require("../utils/admin");
-const firebase = require('../utils/firebaseConfig');
+const firebase = require("../utils/firebaseConfig");
 
 exports.createTransaction = (req, res) => {
   const newTransaction = {
@@ -7,6 +7,7 @@ exports.createTransaction = (req, res) => {
     address: req.body.address,
     desc: req.body.desc,
     people: req.body.people,
+    admin: req.user.uid,
     createdAt: new Date().toISOString(),
   };
   db.collection("transactions")
@@ -23,36 +24,51 @@ exports.createTransaction = (req, res) => {
     });
 };
 exports.deleteTransaction = (req, res) => {
-  const tid = req.body.tid;
-
-  db.collection("transactions")
-    .doc(tid)
-    .delete()
+  const document = db.doc(`/transactions/${req.params.tid}`);
+  document
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+      if (doc.data().admin !== req.user.uid) {
+        return res.status(403).json({ error: "Unauthorized" });
+      } else {
+        return document.delete();
+      }
+    })
     .then(() => {
-      console.log("Transaction successfully deleted!");
       return res.json({ message: "Transaction Successfully deleted" });
     })
     .catch((err) => {
-      console.log(err);
       return res.status(500).json({ error: err.code });
     });
 };
 
 exports.updateTransaction = (req, res) => {
+  const document = db.doc(`/transactions/${req.params.tid}`);
   let transactionDetails = {};
 
   if (req.body.name.trim() !== "") transactionDetails.name = req.body.name;
   if (req.body.address.trim() !== "")
     transactionDetails.address = req.body.address;
   if (req.body.desc.trim() !== "") transactionDetails.desc = req.body.desc;
-
-  db.collection("transactions")
-    .doc(req.body.tid)
-    .update(transactionDetails)
+  document
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+      if (doc.data().admin !== req.user.uid) {
+        return res.status(403).json({ error: "Unauthorized" });
+      } else{
+        return document.update(transactionDetails)
+      }
+    })
     .then(() => {
       console.log("Transaction successfully updated!");
       return res.json({
-        message: `Transaction ${req.body.tid} successfully updated!`,
+        message: `Transaction ${req.params.tid} successfully updated!`,
       });
     })
     .catch((err) => {
@@ -62,7 +78,7 @@ exports.updateTransaction = (req, res) => {
 };
 
 exports.readTransaction = (req, res) => {
-  const tid = req.body.tid;
+  const tid = req.params.tid;
 
   db.collection("transactions")
     .doc(tid)
