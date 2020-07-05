@@ -61,8 +61,8 @@ exports.updateTransaction = (req, res) => {
       }
       if (doc.data().admin !== req.user.uid) {
         return res.status(403).json({ error: "Unauthorized" });
-      } else{
-        return document.update(transactionDetails)
+      } else {
+        return document.update(transactionDetails);
       }
     })
     .then(() => {
@@ -98,16 +98,28 @@ exports.readTransaction = (req, res) => {
     });
 };
 
-/*exports.addPeople = (req, res) => {
+exports.addPeople = (req, res) => {
   const newPeople = {
     tid: req.body.tid,
     person: req.body.person,
   };
+  const transDoc = db.collection("transactions").doc(newPeople.tid);
 
-  db.collection("transactions")
-    .doc(newPeople.tid)
-    .update({
-      people: firebase.firestore.FieldValue.arrayUnion(),
+  transDoc
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+      if (doc.data().admin !== req.user.uid) {
+        return res.status(403).json({ error: "Unauthorized" });
+      } else {
+        var peopleList = doc.data().people;
+        peopleList.push(newPeople.person);
+        return transDoc.update({
+          people: peopleList,
+        });
+      }
     })
     .then(() => {
       return res.json({ message: `${newPeople.person[0]} added successfully` });
@@ -116,4 +128,4 @@ exports.readTransaction = (req, res) => {
       console.log(err);
       return res.status(500).json({ error: err.code });
     });
-};*/
+};

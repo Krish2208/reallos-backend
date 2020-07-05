@@ -12,6 +12,7 @@ const {
   deleteTransaction,
   updateTransaction,
   readTransaction,
+  addPeople
 } = require("./handlers/transactions");
 const { addTodo, deleteTodo, readTodo } = require("./handlers/todo");
 
@@ -28,7 +29,7 @@ app.post("/create-transaction", Auth ,createTransaction);
 app.delete('/delete-transaction/:tid', Auth ,deleteTransaction);
 app.put("/update-transaction/:tid", Auth ,updateTransaction);
 app.get('/get-transaction/:tid', readTransaction);
-//app.post("/add-people", addPeople)
+app.post("/add-people", Auth, addPeople)
 
 app.post("/add-task", Auth, addTodo);
 app.delete('/delete-task/:taskid', Auth, deleteTodo);
