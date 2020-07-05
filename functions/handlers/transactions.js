@@ -122,7 +122,39 @@ exports.addPeople = (req, res) => {
       }
     })
     .then(() => {
-      return res.json({ message: `${newPeople.person[0]} added successfully` });
+      return res.json({ message: `${newPeople.person} added successfully` });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
+
+exports.deletePeople = (req, res) => {
+  const newPeople = {
+    tid: req.params.tid,
+    person: req.params.person,
+  };
+  const transDoc = db.collection("transactions").doc(newPeople.tid);
+
+  transDoc
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Transaction not found" });
+      }
+      if (doc.data().admin !== req.user.uid) {
+        return res.status(403).json({ error: "Unauthorized" });
+      } else {
+        var peopleList = doc.data().people;
+        peopleList = peopleList.filter(item => item !== newPeople.person);
+        return transDoc.update({
+          people: peopleList,
+        });
+      }
+    })
+    .then(() => {
+      return res.json({ message: `${newPeople.person} removed successfully` });
     })
     .catch((err) => {
       console.log(err);
