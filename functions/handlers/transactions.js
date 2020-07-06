@@ -15,7 +15,7 @@ exports.createTransaction = (req, res) => {
     .then((doc) => {
       console.log(doc.id);
       return res.json({
-        message: `Transaction ${doc.id} successfully created`,
+        id: `${doc.id}`
       });
     })
     .catch((err) => {
