@@ -78,3 +78,36 @@ exports.readTodo = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.editTodo = (req,res) => {
+  const document = db.doc(`/tasks/${req.params.taskid}`);
+  let taskDetails = {};
+
+  if (req.body.title.trim() !== "") taskDetails.title = req.body.title;
+  if (req.body.description.trim() !== "")
+    taskDetails.description = req.body.description;
+  if (req.body.date.trim() !== "") taskDetails.date = req.body.date;
+  if (req.body.assignedTo.trim() !== "") taskDetails.assignedTo = req.body.assignedTo;
+  document
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.status(404).json({ error: "Task not found" });
+      }
+      if (doc.data().assignedBy !== req.user.uid) {
+        return res.status(403).json({ error: "Unauthorized" });
+      } else {
+        return document.update(taskDetails);
+      }
+    })
+    .then(() => {
+      console.log("Task successfully updated!");
+      return res.json({
+        message: `Task ${req.params.taskid} successfully updated!`,
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({ error: err.code });
+    });
+};
