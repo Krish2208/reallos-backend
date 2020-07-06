@@ -161,3 +161,31 @@ exports.deletePeople = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.addTransactionToUser = (req,res) => {
+  const tid = req.params.tid;
+  userDoc = db.doc(`users/${req.user.uid}`)
+
+  userDoc
+  .get()
+  .then((doc) => {
+    
+      if (!doc.exists) {
+        return res.status(404).json({ error: "User not found" });
+      } 
+      else{
+        var txnList = doc.data().transactions;
+        txnList.push(tid);
+        return userDoc.update({
+          transactions: txnList,
+        });
+      }
+    })
+    .then(() => {
+      return res.json({ message: `${tid} added successfully to ${req.user.uid}` });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({ error: err.code });
+    });
+}

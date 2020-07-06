@@ -30,7 +30,8 @@ exports.signup = (req,res)=>{
             phone: newUser.phone,
             role: newUser.role,
             state: newUser.state,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            transactions : [],
         }
 
         return db.doc(`/users/${userData.id}`).set(userData);
