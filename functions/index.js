@@ -35,7 +35,7 @@ app.post("/add-people", Auth, addPeople);
 app.delete("/delete-people/:tid/:person", Auth, deletePeople);
 app.put("/add-transaction-to-user/:tid", Auth, addTransactionToUser);
 
-app.post("/add-task", Auth, addTodo);
+app.post("/add-task/:tid", Auth, addTodo);
 app.delete('/delete-task/:taskid', Auth, deleteTodo);
 app.get('/get-task/:taskid', readTodo);
 app.put('/update-task/:taskid', Auth, editTodo);
