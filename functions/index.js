@@ -14,7 +14,8 @@ const {
   readTransaction,
   addPeople,
   deletePeople,
-  addTransactionToUser
+  addTransactionToUser,
+  addMultiplePeople
 } = require("./handlers/transactions");
 const { addTodo, deleteTodo, readTodo, editTodo } = require("./handlers/todo");
 const { invitationSystem } = require("./handlers/invitationSystem");
@@ -36,6 +37,7 @@ app.get('/get-transaction/:tid', readTransaction);
 app.post("/add-people/:tid", Auth, addPeople);
 app.delete("/delete-people/:tid/:email", Auth, deletePeople);
 app.put("/add-transaction-to-user/:tid", Auth, addTransactionToUser);
+app.post("/multiplePeople/:tid", Auth, addMultiplePeople);
 
 //Task Related
 app.post("/add-task/:tid", Auth, addTodo);

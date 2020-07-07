@@ -171,3 +171,24 @@ exports.addTransactionToUser = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.addMultiplePeople = (req,res) =>{
+  const tid = req.params.tid;
+  const people = req.body.people;
+  const txnDoc = db.collection("transactions").doc(tid);
+  txnDoc
+    .get()
+    .then((doc) => {
+      if (!doc.exists) {
+        return res.json({ error: "Transaction not found" });
+      } else {
+        people.forEach(person => {
+          txnDoc.collection("people").doc(person.email).set(person);
+        });
+        return res.json({ message: "All added successfully" }); 
+      }
+    })
+    .catch((err) => {
+      return res.status(500).json({ error: err.code });
+    });
+};
