@@ -31,13 +31,13 @@ app.post("/create-transaction", Auth ,createTransaction);
 app.delete('/delete-transaction/:tid', Auth ,deleteTransaction);
 app.put("/update-transaction/:tid", Auth ,updateTransaction);
 app.get('/get-transaction/:tid', readTransaction);
-app.post("/add-people", Auth, addPeople);
-app.delete("/delete-people/:tid/:person", Auth, deletePeople);
+app.post("/add-people/:tid", Auth, addPeople);
+app.delete("/delete-people/:tid/:email", Auth, deletePeople);
 app.put("/add-transaction-to-user/:tid", Auth, addTransactionToUser);
 
 app.post("/add-task/:tid", Auth, addTodo);
-app.delete('/delete-task/:taskid', Auth, deleteTodo);
-app.get('/get-task/:taskid', readTodo);
-app.put('/update-task/:taskid', Auth, editTodo);
+app.delete('/delete-task/:tid/:taskid', Auth, deleteTodo);
+app.get('/get-task/:tid/:taskid', readTodo);
+app.put('/update-task/:tid/:taskid', Auth, editTodo);
 
 exports.api = functions.https.onRequest(app); // Exporting the app

@@ -15,7 +15,7 @@ exports.createTransaction = (req, res) => {
     .then((doc) => {
       console.log(doc.id);
       return res.json({
-        id: `${doc.id}`
+        id: `${doc.id}`,
       });
     })
     .catch((err) => {
@@ -100,61 +100,43 @@ exports.readTransaction = (req, res) => {
 
 exports.addPeople = (req, res) => {
   const newPeople = {
-    tid: req.body.tid,
-    person: req.body.person,
+    tid: req.params.tid,
+    email: req.body.email,
+    status: "Invitation Pending",
+    uid: "",
+    role: req.body.role,
+    name: req.body.name,
   };
-  const transDoc = db.collection("transactions").doc(newPeople.tid);
-
-  transDoc
+  const txnDoc = db.collection("transactions").doc(newPeople.tid);
+  txnDoc
     .get()
     .then((doc) => {
       if (!doc.exists) {
-        return res.status(404).json({ error: "Transaction not found" });
-      }
-      if (doc.data().admin !== req.user.uid) {
-        return res.status(403).json({ error: "Unauthorized" });
+        return res.json({ error: "Transaction not found" });
       } else {
-        var peopleList = doc.data().people;
-        peopleList.push(newPeople.person);
-        return transDoc.update({
-          people: peopleList,
-        });
+        return txnDoc.collection("people").doc(newPeople.email).set(newPeople);
       }
     })
-    .then(() => {
-      return res.json({ message: `${newPeople.person} added successfully` });
+    .then((doc) => {
+      return res.json({ id: newPeople.email });
     })
     .catch((err) => {
-      console.log(err);
       return res.status(500).json({ error: err.code });
     });
 };
 
 exports.deletePeople = (req, res) => {
-  const newPeople = {
+  const person = {
     tid: req.params.tid,
-    person: req.params.person,
+    email: req.params.email,
   };
-  const transDoc = db.collection("transactions").doc(newPeople.tid);
-
-  transDoc
-    .get()
-    .then((doc) => {
-      if (!doc.exists) {
-        return res.status(404).json({ error: "Transaction not found" });
-      }
-      if (doc.data().admin !== req.user.uid) {
-        return res.status(403).json({ error: "Unauthorized" });
-      } else {
-        var peopleList = doc.data().people;
-        peopleList = peopleList.filter(item => item !== newPeople.person);
-        return transDoc.update({
-          people: peopleList,
-        });
-      }
-    })
+  db.collection("transactions")
+    .doc(person.tid)
+    .collection("people")
+    .doc(person.email)
+    .delete()
     .then(() => {
-      return res.json({ message: `${newPeople.person} removed successfully` });
+      return res.json({ message: "Successfully Removed" });
     })
     .catch((err) => {
       console.log(err);
@@ -162,18 +144,16 @@ exports.deletePeople = (req, res) => {
     });
 };
 
-exports.addTransactionToUser = (req,res) => {
+exports.addTransactionToUser = (req, res) => {
   const tid = req.params.tid;
-  userDoc = db.doc(`users/${req.user.uid}`)
+  userDoc = db.doc(`users/${req.user.uid}`);
 
   userDoc
-  .get()
-  .then((doc) => {
-    
+    .get()
+    .then((doc) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "User not found" });
-      } 
-      else{
+      } else {
         var txnList = doc.data().transactions;
         txnList.push(tid);
         return userDoc.update({
@@ -182,10 +162,12 @@ exports.addTransactionToUser = (req,res) => {
       }
     })
     .then(() => {
-      return res.json({ message: `${tid} added successfully to ${req.user.uid}` });
+      return res.json({
+        message: `${tid} added successfully to ${req.user.uid}`,
+      });
     })
     .catch((err) => {
       console.log(err);
       return res.status(500).json({ error: err.code });
     });
-}
+};

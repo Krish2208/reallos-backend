@@ -1,4 +1,4 @@
-const nodemailer = require("nodemailer");
+/*const nodemailer = require("nodemailer");
 const sendgridTransport = require("nodemailer-sendgrid-transport");
 
 const transporter = nodemailer.createTransport(
@@ -57,3 +57,4 @@ app.get("/verify", function (req, res) {
     res.end("<h1>Request is from unknown source");
   }
 });
+*/

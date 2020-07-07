@@ -1,15 +1,15 @@
 const { db } = require("../utils/admin");
 
 exports.addTodo = (req, res) => {
-  const tid = req.params.tid;
   const newTodo = {
+    tid: req.params.tid,
     title: req.body.title,
     description: req.body.description,
     date: req.body.date,
     assignedTo: req.body.assignedTo,
     assignedBy: req.user.uid
   };
-  const txnDoc = db.collection("transactions").doc(tid)
+  const txnDoc = db.collection("transactions").doc(newTodo.tid)
   txnDoc.get().then((doc)=>{
     if(!doc.exists){
       return res.json({error : "Transaction not found"})
@@ -26,7 +26,7 @@ exports.addTodo = (req, res) => {
   });
 };
 exports.deleteTodo = (req, res) => {
-  const document = db.doc(`/tasks/${req.params.taskid}`);
+  const document = db.doc(`transactions/${req.params.tid}/tasks/${req.params.taskid}`);
   document
     .get()
     .then((doc) => {
@@ -48,9 +48,11 @@ exports.deleteTodo = (req, res) => {
 };
 
 exports.readTodo = (req, res) => {
+  const tid = req.params.tid;
   const taskid = req.params.taskid;
-
-  db.collection("tasks")
+  db.collection("transactions")
+    .doc(tid)
+    .collection("tasks")
     .doc(taskid)
     .get()
     .then((doc) => {
@@ -69,7 +71,7 @@ exports.readTodo = (req, res) => {
 };
 
 exports.editTodo = (req,res) => {
-  const document = db.doc(`/tasks/${req.params.taskid}`);
+  const document = db.doc(`transactions/${req.params.tid}/tasks/${req.params.taskid}`);
   let taskDetails = {};
 
   if (req.body.title.trim() !== "") taskDetails.title = req.body.title;
