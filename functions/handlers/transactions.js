@@ -203,4 +203,23 @@ exports.getAllTransaction = (req,res) => {
   .catch((err) => {
     return res.status(500).json({ error: err.code });
   });
+};
+
+exports.getAllPeople = (req,res) => {
+  const tid = req.params.tid;
+  const peopleArr = [];
+
+  db.collection("transactions").doc(tid).collection("people").get()
+  .then((querySnapshot)=>{
+    return querySnapshot.forEach((doc)=>{
+      peopleArr.push(doc.data())
+    })
+  })
+  .then(()=>{
+    return res.json(peopleArr);
+  })
+  .catch((err) => {
+    console.log(err);
+    return res.status(500).json({ error: err.code });
+  });
 }
