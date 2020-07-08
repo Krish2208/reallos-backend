@@ -192,3 +192,15 @@ exports.addMultiplePeople = (req,res) =>{
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.getAllTransaction = (req,res) => {
+  const uid = req.params.uid;
+
+  db.collection("users").doc(uid).get()
+  .then((doc)=>{
+    return res.json({txnList: doc.data().transactions})
+  })
+  .catch((err) => {
+    return res.status(500).json({ error: err.code });
+  });
+}

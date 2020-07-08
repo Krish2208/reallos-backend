@@ -102,3 +102,22 @@ exports.editTodo = (req,res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.getAllTodo = (req,res) => {
+  const tid = req.params.tid;
+  const taskArr = [];
+
+  db.collection("transactions").doc(tid).collection("tasks").get()
+  .then((querySnapshot)=>{
+    return querySnapshot.forEach((doc)=>{
+      taskArr.push(doc.data())
+    })
+  })
+  .then(()=>{
+    return res.json(taskArr);
+  })
+  .catch((err) => {
+    console.log(err);
+    return res.status(500).json({ error: err.code });
+  });
+}
