@@ -6,7 +6,7 @@ app.use(cors()); // using cors to for creating restful api
 
 const Auth = require('./utils/Auth');
 
-const { signup, login, getUserDetails, resetPassword } = require("./handlers/users");
+const { signup, login, getUserDetails, resetPassword, updateProfile } = require("./handlers/users");
 const {
   createTransaction,
   deleteTransaction,
@@ -33,6 +33,9 @@ app.get('/user-details', Auth ,getUserDetails);
 
 // Password Reset
 app.post('/reset-password/:email', resetPassword);
+
+// Update Profile
+app.put('/update-profile', Auth, updateProfile);
 
 
 // Transaction Related
