@@ -1,15 +1,15 @@
 const { db } = require("../utils/admin");
 
 exports.addTodo = (req, res) => {
+  const tid = req.params.tid;
   const newTodo = {
-    tid: req.params.tid,
     title: req.body.title,
     description: req.body.description,
     date: req.body.date,
     assignedTo: req.body.assignedTo,
     assignedBy: req.user.uid
   };
-  const txnDoc = db.collection("transactions").doc(newTodo.tid)
+  const txnDoc = db.collection("transactions").doc(tid)
   txnDoc.get().then((doc)=>{
     if(!doc.exists){
       return res.json({error : "Transaction not found"})
@@ -110,7 +110,8 @@ exports.getAllTodo = (req,res) => {
   db.collection("transactions").doc(tid).collection("tasks").get()
   .then((querySnapshot)=>{
     return querySnapshot.forEach((doc)=>{
-      taskArr.push(doc.data())
+      const obj = Object.assign({id: doc.id}, doc.data());
+      taskArr.push(obj);
     })
   })
   .then(()=>{
