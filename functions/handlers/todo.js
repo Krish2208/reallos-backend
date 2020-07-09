@@ -114,7 +114,7 @@ exports.getAllTodo = (req,res) => {
     })
   })
   .then(()=>{
-    return res.json(taskArr);
+    return res.json({todoList : taskArr});
   })
   .catch((err) => {
     console.log(err);

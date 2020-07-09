@@ -6,7 +6,6 @@ exports.createTransaction = (req, res) => {
     name: req.body.name,
     address: req.body.address,
     desc: req.body.desc,
-    people: req.body.people,
     admin: req.user.uid,
     createdAt: new Date().toISOString(),
   };
@@ -99,15 +98,15 @@ exports.readTransaction = (req, res) => {
 };
 
 exports.addPeople = (req, res) => {
+  const tid = req.params.tid;
   const newPeople = {
-    tid: req.params.tid,
     email: req.body.email,
-    status: "Invitation Pending",
+    accepted: false,
     uid: "",
     role: req.body.role,
     name: req.body.name,
   };
-  const txnDoc = db.collection("transactions").doc(newPeople.tid);
+  const txnDoc = db.collection("transactions").doc(tid);
   txnDoc
     .get()
     .then((doc) => {
@@ -117,7 +116,7 @@ exports.addPeople = (req, res) => {
         return txnDoc.collection("people").doc(newPeople.email).set(newPeople);
       }
     })
-    .then((doc) => {
+    .then(() => {
       return res.json({ id: newPeople.email });
     })
     .catch((err) => {
@@ -172,7 +171,7 @@ exports.addTransactionToUser = (req, res) => {
     });
 };
 
-exports.addMultiplePeople = (req,res) =>{
+exports.addMultiplePeople = (req, res) => {
   const tid = req.params.tid;
   const people = req.body.people;
   const txnDoc = db.collection("transactions").doc(tid);
@@ -185,7 +184,7 @@ exports.addMultiplePeople = (req,res) =>{
         people.forEach(person => {
           txnDoc.collection("people").doc(person.email).set(person);
         });
-        return res.json({ message: "All added successfully" }); 
+        return res.json({ message: "All added successfully" });
       }
     })
     .catch((err) => {
@@ -193,33 +192,38 @@ exports.addMultiplePeople = (req,res) =>{
     });
 };
 
-exports.getAllTransaction = (req,res) => {
+exports.getAllTransaction = (req, res) => {
   const uid = req.params.uid;
 
-  db.collection("users").doc(uid).get()
-  .then((doc)=>{
-    return res.json({txnList: doc.data().transactions})
-  })
-  .catch((err) => {
-    return res.status(500).json({ error: err.code });
-  });
+  db.collection("users")
+    .doc(uid)
+    .get()
+    .then((doc) => {
+      return res.json({ txnList: doc.data().transactions });
+    })
+    .catch((err) => {
+      return res.status(500).json({ error: err.code });
+    });
 };
 
-exports.getAllPeople = (req,res) => {
+exports.getAllPeople = (req, res) => {
   const tid = req.params.tid;
   const peopleArr = [];
 
-  db.collection("transactions").doc(tid).collection("people").get()
-  .then((querySnapshot)=>{
-    return querySnapshot.forEach((doc)=>{
-      peopleArr.push(doc.data())
+  db.collection("transactions")
+    .doc(tid)
+    .collection("people")
+    .get()
+    .then((querySnapshot) => {
+      return querySnapshot.forEach((doc) => {
+        peopleArr.push(doc.data());
+      });
     })
-  })
-  .then(()=>{
-    return res.json(peopleArr);
-  })
-  .catch((err) => {
-    console.log(err);
-    return res.status(500).json({ error: err.code });
-  });
-}
+    .then(() => {
+      return res.json({ peopleList: peopleArr });
+    })
+    .catch((err) => {
+      console.log(err);
+      return res.status(500).json({ error: err.code });
+    });
+};

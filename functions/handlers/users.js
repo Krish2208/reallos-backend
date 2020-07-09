@@ -1,6 +1,7 @@
 const {db} = require('../utils/admin');
 
 const firebase = require('../utils/firebaseConfig');
+const admin = require('../utils/admin');
 
 exports.signup = (req,res)=>{
     const newUser = {
@@ -18,11 +19,13 @@ exports.signup = (req,res)=>{
     .createUserWithEmailAndPassword(newUser.email,newUser.password) // creating a new user with email and password
     .then(data =>{
         userId = data.user.uid;
+        isEmailVerified = data.user.emailVerified;
         return data.user.getIdToken(); // Returns a promise with the jwt token
     })
     .then( token =>{
         jwttoken = token;
         const userData = { 
+            emailStatus: isEmailVerified,
             id: userId, 
             firstName: newUser.firstName,
             lastName: newUser.lastName,
@@ -38,6 +41,9 @@ exports.signup = (req,res)=>{
     })
     .then(()=>{
         return res.status(201).json({token: jwttoken});
+    })
+    .then(()=>{
+        return firebase.auth().currentUser.sendEmailVerification();
     })
     .catch(err =>{
         console.error(err);
@@ -91,3 +97,58 @@ exports.getUserDetails = (req,res) => {
         return res.status(500).json({ error: err.code });
       });
 }
+
+exports.resetPassword =(req,res)=>{
+    const email = req.params.email;
+
+    firebase.auth().sendPasswordResetEmail(email).then(()=>{
+        return res.json({message: "Email Sent"})
+    })
+    .catch((err) => {
+        console.log(err);
+        return res.status(500).json({ error: err.code });
+    });
+}
+
+/*exports.uploadImage = (req,res) =>{
+    const BusBoy = require('busboy');
+    const path = require("path");
+    const os = require("os");
+    const fs = require('fs');
+
+    const busboy = new BusBoy({ headers: req.headers });
+    let imageFileName;
+    let imageToBeUploaded = {};
+
+    busboy.on('file', (fieldname, file, filename, encoding, mimetype) => {
+        const imageExtension = filename.split('.')[filename.split('.').length - 1];
+        const imageFileName = `${Math.round(Math.random()*10000000)}.${imageExtension}`;
+        const filepath = path.join(os.tmpdir(), imageFileName);
+        imageToBeUploaded = { filepath, mimetype };
+        file.pipe(fs.createWriteStream(filepath));
+    });
+    busboy.on('finish', () =>{
+        firebase.storage().bucket().upload(imageToBeUploaded.filepath,{
+            resumable: false,
+            metadata: {
+                metadata:{
+                    contentType: imageToBeUploaded.mimetype
+                },
+            }
+        })
+        .then(()=>{
+            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/reallos-test.appspot.com/o/${imageFileName}?alt=media`
+            return db.doc(`/users/${req.user.uid}`).update({
+                imageURL : imageUrl
+            });
+        })
+        .then(()=>{
+            return res.json({message: "Image added successfully"});
+        })
+        .catch((err) => {
+            console.log(err);
+            return res.status(500).json({ error: err.code });
+        })
+    })
+    busboy.end(req.rawBody);
+}*/
