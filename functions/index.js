@@ -17,9 +17,10 @@ const {
   addTransactionToUser,
   addMultiplePeople,
   getAllTransaction,
-  getAllPeople
+  getAllPeople,
+  removeTransactionFromAllUser,
 } = require("./handlers/transactions");
-const { addTodo, deleteTodo, readTodo, editTodo, getAllTodo } = require("./handlers/todo");
+const { addTodo, deleteTodo, readTodo, editTodo, getAllTodo, markDone } = require("./handlers/todo");
 const { invitationSystem } = require("./handlers/invitationSystem");
 
 //Signup Route
@@ -49,6 +50,7 @@ app.put("/add-transaction-to-user/:tid", Auth, addTransactionToUser);
 app.post("/add-multiple-people/:tid", Auth, addMultiplePeople);
 app.get("/get-all-transactions/:uid", Auth, getAllTransaction);
 app.get("/get-all-people/:tid", Auth, getAllPeople);
+app.put("/remove-transaction-from-users/:tid", Auth, removeTransactionFromAllUser);
 
 //Task Related
 app.post("/add-task/:tid", Auth, addTodo);
@@ -56,8 +58,10 @@ app.delete('/delete-task/:tid/:taskid', Auth, deleteTodo);
 app.get('/get-task/:tid/:taskid', readTodo);
 app.put('/update-task/:tid/:taskid', Auth, editTodo);
 app.get('/get-all-tasks/:tid', Auth, getAllTodo);
+app.put('/task-done/:tid/:taskid', Auth, markDone);
 
 // Invitation System Related
 app.post("/invite/:tid", Auth, invitationSystem);
+
 
 exports.api = functions.https.onRequest(app); // Exporting the app

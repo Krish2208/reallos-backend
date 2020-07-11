@@ -1,4 +1,4 @@
-/*const functions = require("firebase-functions");
+const functions = require("firebase-functions");
 const { db } = require("../utils/admin");
 
 exports.createTaskNotification = functions.firestore
@@ -8,9 +8,8 @@ exports.createTaskNotification = functions.firestore
       .where("transactions", "array-contains", snapshot.tid)
       .get()
       .then((querySnapshot) => {
-        querySnapshot.forEach((doc) => {
-          return db
-            .collection("users")
+        return querySnapshot.forEach((doc) => {
+          db.collection("users")
             .doc(doc.id)
             .collection("notifications")
             .doc(snapshot.taskid)
@@ -28,4 +27,3 @@ exports.createTaskNotification = functions.firestore
         return;
       });
   });
-*/

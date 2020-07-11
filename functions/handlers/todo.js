@@ -7,7 +7,8 @@ exports.addTodo = (req, res) => {
     description: req.body.description,
     date: req.body.date,
     assignedTo: req.body.assignedTo,
-    assignedBy: req.user.uid
+    assignedBy: req.body.assignedBy,
+    completed: false,
   };
   const txnDoc = db.collection("transactions").doc(tid)
   txnDoc.get().then((doc)=>{
@@ -25,6 +26,7 @@ exports.addTodo = (req, res) => {
     return res.status(500).json({ error: err.code });
   });
 };
+
 exports.deleteTodo = (req, res) => {
   const document = db.doc(`transactions/${req.params.tid}/tasks/${req.params.taskid}`);
   document
@@ -33,7 +35,7 @@ exports.deleteTodo = (req, res) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "Task not found" });
       }
-      if (doc.data().assignedBy !== req.user.uid) {
+      if (doc.data().assignedBy.id !== req.user.uid) {
         return res.status(403).json({ error: "Unauthorized" });
       } else {
         return document.delete();
@@ -78,14 +80,14 @@ exports.editTodo = (req,res) => {
   if (req.body.description.trim() !== "")
     taskDetails.description = req.body.description;
   if (req.body.date.trim() !== "") taskDetails.date = req.body.date;
-  if (req.body.assignedTo.trim() !== "") taskDetails.assignedTo = req.body.assignedTo;
+  taskDetails.assignedTo = req.body.assignedTo;
   document
     .get()
     .then((doc) => {
       if (!doc.exists) {
         return res.status(404).json({ error: "Task not found" });
       }
-      if (doc.data().assignedBy !== req.user.uid) {
+      if (doc.data().assignedBy.id !== req.user.uid) {
         return res.status(403).json({ error: "Unauthorized" });
       } else {
         return document.update(taskDetails);
@@ -116,6 +118,22 @@ exports.getAllTodo = (req,res) => {
   })
   .then(()=>{
     return res.json({todoList : taskArr});
+  })
+  .catch((err) => {
+    console.log(err);
+    return res.status(500).json({ error: err.code });
+  });
+}
+
+exports.markDone = (req,res) => {
+  const user = req.user.uid;
+  const document = db.doc(`transactions/${req.params.tid}/tasks/${req.params.taskid}`)
+  document.get()
+  .then((doc)=>{
+    return document.update({completed: true})
+  })
+  .then(()=>{
+    return res.json({message: "Successfully Mark as Done"})
   })
   .catch((err) => {
     console.log(err);

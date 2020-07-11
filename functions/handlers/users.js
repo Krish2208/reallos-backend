@@ -1,7 +1,6 @@
-const { db } = require("../utils/admin");
+const { db, admin } = require("../utils/admin");
 
 const firebase = require("../utils/firebaseConfig");
-const admin = require("../utils/admin");
 
 exports.signup = (req, res) => {
   const newUser = {
@@ -49,7 +48,7 @@ exports.signup = (req, res) => {
     .catch((err) => {
       console.error(err);
       if (err.code === "auth/email-already-in-use") {
-        return res.status(400).json({ email: "Email is already in use" });
+        return res.status(400).json({ error: "This Email is already registered" });
       } else {
         return res.status(500).json({ error: err.code });
       }
@@ -62,25 +61,36 @@ exports.login = (req, res) => {
     password: req.body.password,
   };
 
-  firebase
+  admin
     .auth()
-    .signInWithEmailAndPassword(user.email, user.password)
-    .then((data) => {
-      return data.user.getIdToken();
-    })
-    .then((token) => {
-      return res.json({ token });
-    })
-    .catch((err) => {
-      console.error(err);
-      if (err.code === "auth/wrong-password") {
-        return res
-          .status(403)
-          .json({ general: "wrong credentials, please try again" });
-      } else {
-        return res.status(500).json({ error: err.code });
+    .getUserByEmail(user.email)
+    .then((userRecord) => {
+      if (userRecord.emailVerified === false) {
+        return res.json({error: "Please verify your email"})
       }
-    });
+      return firebase
+          .auth()
+          .signInWithEmailAndPassword(user.email, user.password)
+          .then((data) => {
+            return data.user.getIdToken();
+          })
+          .then((token) => {
+            return res.json({ token });
+          })
+          .catch((err) => {
+            console.error(err);
+            if (err.code === "auth/wrong-password") {
+              return res
+                .status(403)
+                .json({ error: "Please check your Email and Password" });
+            } else {
+              return res.status(500).json({ error: err.code });
+            }
+          });
+    })
+    .catch((err)=>{
+      return res.json({error: err.message});
+    })
 };
 
 exports.getUserDetails = (req, res) => {
@@ -122,9 +132,9 @@ exports.updateProfile = (req, res) => {
   const document = db.collection("users").doc(req.user.uid);
   let userDetails = {};
 
-  if (req.body.firstName.trim() !== "") userDetails.firstName = req.body.firstName;
-  if (req.body.lastName.trim() !== "")
-    userDetails.lastName = req.body.lastName;
+  if (req.body.firstName.trim() !== "")
+    userDetails.firstName = req.body.firstName;
+  if (req.body.lastName.trim() !== "") userDetails.lastName = req.body.lastName;
   if (req.body.phone.trim() !== "") userDetails.phone = req.body.phone;
   document
     .get()

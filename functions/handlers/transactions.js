@@ -22,6 +22,8 @@ exports.createTransaction = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+
 exports.deleteTransaction = (req, res) => {
   const document = db.doc(`/transactions/${req.params.tid}`);
   document
@@ -43,6 +45,7 @@ exports.deleteTransaction = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
 
 exports.updateTransaction = (req, res) => {
   const document = db.doc(`/transactions/${req.params.tid}`);
@@ -76,26 +79,47 @@ exports.updateTransaction = (req, res) => {
     });
 };
 
+
 exports.readTransaction = (req, res) => {
   const tid = req.params.tid;
+  var status = {
+    all: 0,
+    completed: 0
+  };
+  var obj;
 
   db.collection("transactions")
     .doc(tid)
     .get()
     .then((doc) => {
       if (doc.exists) {
-        console.log(`Transaction ${tid} Data : `, doc.data());
-        return res.json(doc.data());
+        obj = doc.data()
+        return db.collection(`transactions/${tid}/tasks`).get()
+        .then((snapshot)=>{
+          return snapshot.forEach((doc)=>{
+            if(doc.data().completed){
+              status.all++;
+              status.completed++;
+            }
+            else{
+              status.all++;
+            }
+          })
+        })
       } else {
         console.log("Transaction does not exists");
         return res.json({ error: "Transaction does not exists" });
       }
+    })
+    .then(()=>{
+      return res.json(Object.assign(obj, status))
     })
     .catch((err) => {
       console.log(err);
       return res.status(500).json({ error: err.code });
     });
 };
+
 
 exports.addPeople = (req, res) => {
   const tid = req.params.tid;
@@ -124,6 +148,7 @@ exports.addPeople = (req, res) => {
     });
 };
 
+
 exports.deletePeople = (req, res) => {
   const person = {
     tid: req.params.tid,
@@ -142,6 +167,7 @@ exports.deletePeople = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
 
 exports.addTransactionToUser = (req, res) => {
   const tid = req.params.tid;
@@ -171,6 +197,7 @@ exports.addTransactionToUser = (req, res) => {
     });
 };
 
+
 exports.addMultiplePeople = (req, res) => {
   const tid = req.params.tid;
   const people = req.body.people;
@@ -181,7 +208,7 @@ exports.addMultiplePeople = (req, res) => {
       if (!doc.exists) {
         return res.json({ error: "Transaction not found" });
       } else {
-        people.forEach(person => {
+        people.forEach((person) => {
           txnDoc.collection("people").doc(person.email).set(person);
         });
         return res.json({ message: "All added successfully" });
@@ -191,6 +218,7 @@ exports.addMultiplePeople = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
 
 exports.getAllTransaction = (req, res) => {
   const uid = req.params.uid;
@@ -205,6 +233,7 @@ exports.getAllTransaction = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
 
 exports.getAllPeople = (req, res) => {
   const tid = req.params.tid;
@@ -227,3 +256,34 @@ exports.getAllPeople = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+
+exports.removeTransactionFromAllUser = (req, res) => {
+  mylist=[];
+  const tid = req.params.tid;
+  db.collection("users")
+    .where("transactions", "array-contains",tid)
+    .then((doc)=>{
+      return res.json({message: doc })
+    })
+    .catch((err) => {
+      return res.status(500).json({ error: err.code });
+    });
+};
+
+/*exports.testarray = (req,res) =>{
+  var mylist = [];
+  db.collection("users")
+  .where("transaction", "array-contains", req.body.transaction)
+  .then((snaphot)=>{
+    return snaphot.forEach((doc)=>{
+      mylist = doc.data();
+    })
+  })
+  .then(()=>{
+    return res.json({message: mylist})
+  })
+  .catch((err) => {
+    return res.status(500).json({ error: err.code });
+  });
+}*/
