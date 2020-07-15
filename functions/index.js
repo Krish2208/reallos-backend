@@ -6,7 +6,7 @@ app.use(cors()); // using cors to for creating restful api
 
 const Auth = require('./utils/Auth');
 
-const { signup, login, getUserDetails, resetPassword, updateProfile } = require("./handlers/users");
+const { signup, login, getUserDetails, resetPassword, updateProfile, addUserDetails } = require("./handlers/users");
 const {
   createTransaction,
   deleteTransaction,
@@ -25,6 +25,9 @@ const { invitationSystem } = require("./handlers/invitationSystem");
 
 //Signup Route
 app.post("/signup", signup);
+
+// Add User Details
+app.post("/add-user-details/:uid", addUserDetails);
 
 // login route
 app.post("/login", login);

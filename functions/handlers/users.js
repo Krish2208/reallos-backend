@@ -55,6 +55,29 @@ exports.signup = (req, res) => {
     });
 };
 
+exports.addUserDetails = (req, res) => {
+  const uid = req.params.uid;
+  const userData = {
+    id: uid,
+    firstName: req.body.firstName,
+    lastName: req.body.lastName,
+    email: req.body.email,
+    phone: req.body.phone,
+    role: req.body.role,
+    state: req.body.state,
+    createdAt: new Date().toISOString(),
+    transactions: [],
+  };
+
+  db.collection("users").doc(uid).set(userData)
+  .then(()=>{
+    return res.json({id: uid})
+  })
+  .catch((err)=>{
+    return res.json({error: err.message})
+  })
+}
+
 exports.login = (req, res) => {
   const user = {
     email: req.body.email,
@@ -136,6 +159,7 @@ exports.updateProfile = (req, res) => {
     userDetails.firstName = req.body.firstName;
   if (req.body.lastName.trim() !== "") userDetails.lastName = req.body.lastName;
   if (req.body.phone.trim() !== "") userDetails.phone = req.body.phone;
+  if (req.body.role.trim() !== "") userDetails.role = req.body.role;
   document
     .get()
     .then((doc) => {
