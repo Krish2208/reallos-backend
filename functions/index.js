@@ -1,5 +1,11 @@
 const functions = require("firebase-functions");
 const cors = require("cors");
+const { Storage } = require('@google-cloud/storage');
+const spawn = require('child-process-promise').spawn;
+const path = require('path');
+const os = require('os');
+const fs = require('fs');
+const gs = require('gs');
 
 const app = require("express")();
 app.use(cors()); // using cors to for creating restful api
@@ -66,6 +72,66 @@ app.put('/task-done/:tid/:taskid', Auth, markDone);
 // Invitation System Related
 app.post("/invite/:tid", Auth, invitationSystem);
 
+// Invitation Mail
 app.post("/email", invitationMail);
 
-exports.api = functions.https.onRequest(app); // Exporting the app
+// Core HTTP API for app
+exports.api = functions.https.onRequest(app);
+
+// Create thumbnail when a paperwork is uploaded
+exports.createThumbnail = functions.storage.object().onFinalize((object, context) => {
+  const filePath = object.name;
+  const fileDir = path.dirname(filePath);
+  const fileName = path.basename(filePath);
+  const tempFilePath = path.join(os.tmpdir(), fileName);
+
+  if (!fileName.endsWith('.pdf')) return false;
+
+  const newFileName = `${path.basename(fileName, '.pdf')}.png`;
+  const tempNewFilePath = path.join(os.tmpdir(), newFileName);
+
+  const storage = new Storage();
+  const bucket = storage.bucket(object.bucket);
+
+  return bucket.file(filePath).download({
+    destination: tempFilePath
+  })
+  .then(() => {
+    console.info("File was locally downloaded to:", tempFilePath);
+    console.log("Output Dir:", tempNewFilePath);
+
+    return new Promise((resolve, reject) => {
+      gs()
+        .batch()
+        .nopause()
+        .option('-r' + 50 * 2)
+        .option('-dDownScaleFactor=2')
+        .executablePath('./lambda-ghostscript/bin/gs')
+        .device('png16m')
+        .output(tempNewFilePath)
+        .input(tempFilePath)
+        .exec((err, stdout, stderr) => {
+            if (!err) {
+              console.log('gs executed w/o error');            
+              console.log('stdout',stdout);            
+              console.log('stderr',stderr);            
+              resolve();
+            } else {
+              console.log('gs error:', err);
+              reject(err);
+            }
+        });
+    })
+  })
+  .then(() => {
+    console.log("Created PNG Thumbnail in:", tempNewFilePath);
+
+    return bucket.upload(tempNewFilePath, {
+      destination: path.join(fileDir, 'thumbnails', newFileName)
+    });
+  })
+  .catch((err) => {
+    console.error('Error Occurred:', err);
+    return err;
+  });
+});
