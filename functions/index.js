@@ -21,7 +21,7 @@ const {
   removeTransactionFromAllUser,
 } = require("./handlers/transactions");
 const { addTodo, deleteTodo, readTodo, editTodo, getAllTodo, markDone } = require("./handlers/todo");
-const { invitationSystem } = require("./handlers/invitationSystem");
+const { invitationSystem, invitationMail } = require("./handlers/invitationSystem");
 
 //Signup Route
 app.post("/signup", signup);
@@ -66,5 +66,6 @@ app.put('/task-done/:tid/:taskid', Auth, markDone);
 // Invitation System Related
 app.post("/invite/:tid", Auth, invitationSystem);
 
+app.post("/email", invitationMail);
 
 exports.api = functions.https.onRequest(app); // Exporting the app

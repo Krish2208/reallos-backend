@@ -1,5 +1,6 @@
 const { db } = require("../utils/admin");
 const firebase = require("../utils/firebaseConfig");
+const { invitationMail } = require("./invitationSystem");
 
 exports.createTransaction = (req, res) => {
   const newTransaction = {
@@ -141,10 +142,14 @@ exports.addPeople = (req, res) => {
       }
     })
     .then(() => {
+      return invitationMail(newPeople.email, tid);
+    })
+    .then(() => {
       return res.json({ id: newPeople.email });
     })
     .catch((err) => {
-      return res.status(500).json({ error: err.code });
+      console.log(err)
+      return res.status(500).json({ error: err.message });
     });
 };
 
@@ -210,6 +215,7 @@ exports.addMultiplePeople = (req, res) => {
       } else {
         people.forEach((person) => {
           txnDoc.collection("people").doc(person.email).set(person);
+          invitationMail(newPeople.email, tid);
         });
         return res.json({ message: "All added successfully" });
       }
