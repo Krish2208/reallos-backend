@@ -10,7 +10,7 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "8"
+    "node": "10"
   },
   "dependencies": {
     "@sendgrid/mail": "^7.2.1",
@@ -18,7 +18,10 @@
     "firebase": "^7.15.5",
     "firebase-admin": "^8.10.0",
     "firebase-functions": "^3.6.1",
-    "nodemailer": "^6.4.10"
+    "nodemailer": "^6.4.10",
+    "@google-cloud/storage": "^5.1.2",
+    "child-process-promise": "^2.2.1",
+    "gs": "https://github.com/sina-masnadi/node-gs/tarball/master"
   },
   "devDependencies": {
     "eslint": "^5.12.0",
