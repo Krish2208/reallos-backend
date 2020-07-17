@@ -1,4 +1,9 @@
 const { db } = require("../utils/admin");
+const sgMail = require("@sendgrid/mail");
+const functions = require("firebase-functions");
+const API_KEY = functions.config().sendgrid.key;
+const TEMPLATE_ID = functions.config().sendgrid.template;
+sgMail.setApiKey(API_KEY);
 
 exports.invitationSystem = (req, res) => {
   const tid = req.params.tid;
@@ -28,3 +33,18 @@ exports.invitationSystem = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
+
+exports.invitationMail = (email, tid) => {
+  const msg = {
+    to: email,
+    from: 'reallostest@gmail.com',
+    templateId: TEMPLATE_ID,
+    dynamic_template_data: {
+      subject: `You are invited to Transaction ${tid} on Reallos`,
+      tid: tid,
+      url: email
+    },
+  };
+
+  return sgMail.send(msg);
+}
