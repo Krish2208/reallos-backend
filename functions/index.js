@@ -130,8 +130,8 @@ exports.createThumbnail = functions.storage
             .nopause()
             .option("-r" + 50 * 2)
             .option("-dDownScaleFactor=2")
-            .option('-dFirstPage=1')
-            .option('-dLastPage=1')
+            .option("-dFirstPage=1")
+            .option("-dLastPage=1")
             .executablePath("./lambda-ghostscript/bin/gs")
             .device("png16m")
             .output(tempNewFilePath)
@@ -161,6 +161,68 @@ exports.createThumbnail = functions.storage
         return err;
       });
   });
+
+// Delete Transaction from User Array when a Transaction is deleted
+
+exports.deleteTransactionFromUser = functions.firestore
+  .document("transactions/{tid}")
+  .onDelete(async (snapshot, content) => {
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .update({
+              transactions: firebase.firestore.FieldValue.arrayRemove(
+                content.params.tid
+              ),
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+// Delete Transaction from User Array when the user is removed from a Transaction
+
+exports.deleteTransactionWhenRemoved = functions.firestore
+  .document("transactions/{tid}/people/{email}")
+  .onDelete(async (snapshot, content) => {
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("email", "==" , content.params.email);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .update({
+              transactions: firebase.firestore.FieldValue.arrayRemove(
+                content.params.tid
+              ),
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+// Notifications
 
 exports.createTaskNotification = functions.firestore
   .document("transactions/{tid}/tasks/{taskid}")
@@ -195,7 +257,7 @@ exports.createTaskNotification = functions.firestore
       });
   });
 
-  exports.updateTaskNotification = functions.firestore
+exports.updateTaskNotification = functions.firestore
   .document("transactions/{tid}/tasks/{taskid}")
   .onUpdate(async (snapshot, content) => {
     const newValue = snapshot.after.data();
@@ -229,10 +291,10 @@ exports.createTaskNotification = functions.firestore
       });
   });
 
-  exports.deleteTaskNotification = functions.firestore
+exports.deleteTaskNotification = functions.firestore
   .document("transactions/{tid}/tasks/{taskid}")
   .onDelete(async (snapshot, content) => {
-    const newValue = snapshot.data();
+    const value = snapshot.data();
     const query = firebase
       .firestore()
       .collection("users")
@@ -249,8 +311,134 @@ exports.createTaskNotification = functions.firestore
             .doc(content.params.taskid)
             .set({
               type: "Task Deleted",
-              taskName: newValue.title,
-              deletedBy: newValue.assignedBy.name,
+              taskName: value.title,
+              deletedBy: value.assignedBy.name,
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+exports.addPeopleNotification = functions.firestore
+  .document("transactions/{tid}/tasks/{email}")
+  .onCreate(async (snapshot, content) => {
+    const value = snapshot.data();
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .collection("notifications")
+            .doc(content.params.email)
+            .set({
+              type: "Person Added",
+              name: value.name,
+              role: value.role,
+              accepted: value.accepted,
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+exports.updatePeopleNotification = functions.firestore
+  .document("transactions/{tid}/tasks/{email}")
+  .onUpdate(async (snapshot, content) => {
+    const value = snapshot.after.data();
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .collection("notifications")
+            .doc(content.params.email)
+            .set({
+              type: "Invitation Accepted",
+              name: value.name,
+              role: value.role,
+              accepted: value.accepted,
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+  exports.addPaperWorkNotification = functions.firestore
+  .document("transactions/{tid}/paperwork/{name}")
+  .onCreate(async (snapshot, content) => {
+    const value = snapshot.data();
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .collection("notifications")
+            .doc(`Document${content.params.name}`)
+            .set({
+              type: "Document Added",
+              name: content.params.name,
+              uploadedBy: value.creator
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+  exports.deletePaperWorkNotification = functions.firestore
+  .document("transactions/{tid}/paperwork/{name}")
+  .onDelete(async (snapshot, content) => {
+    const value = snapshot.data();
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .collection("notifications")
+            .doc(`Document${content.params.name}`)
+            .set({
+              type: "Document Removed",
+              name: content.params.name,
+              uploadedBy: value.creator
             });
         });
       })
