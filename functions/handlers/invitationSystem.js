@@ -21,7 +21,7 @@ exports.invitationSystem = (req, res) => {
       var email = doc.data().email;
       return transactionDoc.doc(email).update({
         uid: uid,
-        status: "Invitation Accepted",
+        accepted: true,
       });
     })
     .then(() => {
@@ -34,15 +34,19 @@ exports.invitationSystem = (req, res) => {
     });
 };
 
-exports.invitationMail = (email, tid) => {
+exports.invitationMail = (user, email, tid, transactionName, address, role) => {
   const msg = {
     to: email,
     from: 'reallostest@gmail.com',
     templateId: TEMPLATE_ID,
     dynamic_template_data: {
-      subject: `You are invited to Transaction ${tid} on Reallos`,
+      subject: `You are invited to Transaction ${transactionName} on Reallos`,
       tid: tid,
-      url: email
+      url: email,
+      user: user,
+      transactionName: transactionName,
+      address: address,
+      role: role
     },
   };
 

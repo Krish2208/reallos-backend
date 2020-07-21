@@ -124,6 +124,7 @@ exports.readTransaction = (req, res) => {
 
 exports.addPeople = (req, res) => {
   const tid = req.params.tid;
+  let transactionData;
   const newPeople = {
     email: req.body.email,
     accepted: false,
@@ -138,11 +139,12 @@ exports.addPeople = (req, res) => {
       if (!doc.exists) {
         return res.json({ error: "Transaction not found" });
       } else {
+        transactionData = doc.data();
         return txnDoc.collection("people").doc(newPeople.email).set(newPeople);
       }
     })
     .then(() => {
-      return invitationMail(newPeople.email, tid);
+      return invitationMail(newPeople.name, newPeople.email, tid, transactionData.name, transactionData.address, newPeople.role);
     })
     .then(() => {
       return res.json({ id: newPeople.email });
@@ -215,7 +217,7 @@ exports.addMultiplePeople = (req, res) => {
       } else {
         people.forEach((person) => {
           txnDoc.collection("people").doc(person.email).set(person);
-          invitationMail(newPeople.email, tid);
+          invitationMail(newPeople.name, newPeople.email, tid, doc.data().name, doc.data().address, newPeople.role);
         });
         return res.json({ message: "All added successfully" });
       }
@@ -277,19 +279,19 @@ exports.removeTransactionFromAllUser = (req, res) => {
     });
 };
 
-/*exports.testarray = (req,res) =>{
-  var mylist = [];
-  db.collection("users")
-  .where("transaction", "array-contains", req.body.transaction)
-  .then((snaphot)=>{
-    return snaphot.forEach((doc)=>{
-      mylist = doc.data();
+exports.testarray = (req,res) => {
+  const query = firebase.firestore().collection("users").where('transactions', 'array-contains', req.params.tid);
+  var list = [];
+  query.get().then(snapshot=>{
+    return snapshot.docs.forEach(doc=>{
+      list.push(doc.data())
+      console.log(doc.id, doc.data())
     })
   })
   .then(()=>{
-    return res.json({message: mylist})
+    return res.json({message: "success", data: list})
   })
-  .catch((err) => {
-    return res.status(500).json({ error: err.code });
-  });
-}*/
+  .catch((err)=>{
+    return res.json({error: err.message})
+  })
+}
