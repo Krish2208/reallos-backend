@@ -130,6 +130,8 @@ exports.createThumbnail = functions.storage
             .nopause()
             .option("-r" + 50 * 2)
             .option("-dDownScaleFactor=2")
+            .option('-dFirstPage=1')
+            .option('-dLastPage=1')
             .executablePath("./lambda-ghostscript/bin/gs")
             .device("png16m")
             .output(tempNewFilePath)
