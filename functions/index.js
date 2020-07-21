@@ -19,6 +19,7 @@ const {
   resetPassword,
   updateProfile,
   addUserDetails,
+  getNotifications,
 } = require("./handlers/users");
 const {
   createTransaction,
@@ -63,6 +64,9 @@ app.post("/reset-password/:email", resetPassword);
 
 // Update Profile
 app.put("/update-profile", Auth, updateProfile);
+
+// Get All Notifications
+app.get('/notifications', Auth, getNotifications);
 
 // Transaction Related
 app.post("/create-transaction", Auth, createTransaction);

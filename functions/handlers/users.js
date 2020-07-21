@@ -184,6 +184,24 @@ exports.updateProfile = (req, res) => {
     });
 };
 
+exports.getNotifications = (req,res) => {
+  var Notifications = [];
+
+  db.collection('users').doc(req.user.uid).collection('notifications').get()
+  .then((snapshot)=>{
+    return snapshot.docs.forEach((doc)=>{
+      Notifications.push(doc.data())
+    })
+  })
+  .then(()=>{
+    return res.json({notifications: Notifications});
+  })
+  .catch((err)=>{
+    console.log(err);
+    return res.status(500).json({ error: err.code });
+  })
+}
+
 /*exports.uploadImage = (req,res) =>{
     const BusBoy = require('busboy');
     const path = require("path");
