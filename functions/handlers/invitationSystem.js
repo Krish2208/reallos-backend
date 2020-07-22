@@ -1,4 +1,4 @@
-const { db } = require("../utils/admin");
+const { db, admin } = require("../utils/admin");
 const sgMail = require("@sendgrid/mail");
 const functions = require("firebase-functions");
 const API_KEY = functions.config().sendgrid.key;
@@ -15,10 +15,9 @@ exports.invitationSystem = (req, res) => {
     .doc(tid)
     .collection("people");
 
-  userDoc
-    .get()
+  admin.auth().getUser(uid)
     .then((doc) => {
-      var email = doc.data().email;
+      var email = doc.email;
       return transactionDoc.doc(email).update({
         uid: uid,
         accepted: true,

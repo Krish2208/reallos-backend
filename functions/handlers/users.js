@@ -66,10 +66,20 @@ exports.addUserDetails = (req, res) => {
     role: req.body.role,
     state: req.body.state,
     createdAt: new Date().toISOString(),
-    transactions: [],
   };
 
-  db.collection("users").doc(uid).set(userData)
+  userDoc = db.doc(`users/${uid}`);
+
+  userDoc
+    .get()
+    .then((doc)=>{
+      if(!doc.exists){
+        return userDoc.set(Object.assign(userData,{transactions: []}))
+      }
+      else{
+        return userDoc.update(userData)
+      }
+    })
   .then(()=>{
     return res.json({id: uid})
   })

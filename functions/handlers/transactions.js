@@ -178,18 +178,19 @@ exports.deletePeople = (req, res) => {
 
 exports.addTransactionToUser = (req, res) => {
   const tid = req.params.tid;
+  const transactionList = [req.params.tid];
   userDoc = db.doc(`users/${req.user.uid}`);
 
   userDoc
     .get()
     .then((doc) => {
       if (!doc.exists) {
-        return res.status(404).json({ error: "User not found" });
+        return userDoc.set({
+          transactions: transactionList
+        })
       } else {
-        var txnList = doc.data().transactions;
-        txnList.push(tid);
         return userDoc.update({
-          transactions: txnList,
+          transactions: firebase.firestore.FieldValue.arrayUnion(tid)
         });
       }
     })
@@ -217,7 +218,7 @@ exports.addMultiplePeople = (req, res) => {
       } else {
         people.forEach((person) => {
           txnDoc.collection("people").doc(person.email).set(person);
-          invitationMail(newPeople.name, newPeople.email, tid, doc.data().name, doc.data().address, newPeople.role);
+          invitationMail(person.name, person.email, tid, doc.data().name, doc.data().address, person.role);
         });
         return res.json({ message: "All added successfully" });
       }
