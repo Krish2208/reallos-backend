@@ -66,7 +66,7 @@ app.post("/reset-password/:email", resetPassword);
 app.put("/update-profile", Auth, updateProfile);
 
 // Get All Notifications
-app.get('/notifications', Auth, getNotifications);
+app.get("/notifications", Auth, getNotifications);
 
 // Transaction Related
 app.post("/create-transaction", Auth, createTransaction);
@@ -204,7 +204,7 @@ exports.deleteTransactionWhenRemoved = functions.firestore
     const query = firebase
       .firestore()
       .collection("users")
-      .where("email", "==" , content.params.email);
+      .where("email", "==", content.params.email);
     await query
       .get()
       .then((querySnapshot) => {
@@ -253,6 +253,7 @@ exports.createTaskNotification = functions.firestore
               assignedBy: snapshot.data().assignedBy,
               assignedTo: snapshot.data().assignedTo,
               completed: snapshot.data().completed,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             });
         });
       })
@@ -266,35 +267,66 @@ exports.updateTaskNotification = functions.firestore
   .document("transactions/{tid}/tasks/{taskid}")
   .onUpdate(async (snapshot, content) => {
     const newValue = snapshot.after.data();
+    const oldValue = snapshot.before.data();
     const query = firebase
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .doc(content.params.taskid)
-            .set({
-              isRead: false,
-              type: "TASK_UPDATE",
-              taskName: newValue.title,
-              date: newValue.date,
-              assignedBy: newValue.assignedBy,
-              assignedTo: newValue.assignedTo,
-              completed: newValue.completed,
-            });
+    if (newValue.completed === true && oldValue.completed === false) {
+      await query
+        .get()
+        .then((querySnapshot) => {
+          return querySnapshot.forEach((doc) => {
+            firebase
+              .firestore()
+              .collection("users")
+              .doc(doc.id)
+              .collection("notifications")
+              .doc(content.params.taskid)
+              .set({
+                isRead: false,
+                type: "TASK_COMPLETED",
+                taskName: newValue.title,
+                date: newValue.date,
+                assignedBy: newValue.assignedBy,
+                assignedTo: newValue.assignedTo,
+                completed: newValue.completed,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          return;
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    } else {
+      await query
+        .get()
+        .then((querySnapshot) => {
+          return querySnapshot.forEach((doc) => {
+            firebase
+              .firestore()
+              .collection("users")
+              .doc(doc.id)
+              .collection("notifications")
+              .doc(content.params.taskid)
+              .set({
+                isRead: false,
+                type: "TASK_UPDATE",
+                taskName: newValue.title,
+                date: newValue.date,
+                assignedBy: newValue.assignedBy,
+                assignedTo: newValue.assignedTo,
+                completed: newValue.completed,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              });
+          });
+        })
+        .catch((err) => {
+          console.log(err);
+          return;
+        });
+    }
   });
 
 exports.deleteTaskNotification = functions.firestore
@@ -320,6 +352,7 @@ exports.deleteTaskNotification = functions.firestore
               type: "TASK_DELETE",
               taskName: value.title,
               deletedBy: value.assignedBy.name,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             });
         });
       })
@@ -353,6 +386,7 @@ exports.addPeopleNotification = functions.firestore
               name: value.name,
               role: value.role,
               accepted: value.accepted,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             });
         });
       })
@@ -386,6 +420,7 @@ exports.updatePeopleNotification = functions.firestore
               name: value.name,
               role: value.role,
               accepted: value.accepted,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             });
         });
       })
@@ -395,7 +430,7 @@ exports.updatePeopleNotification = functions.firestore
       });
   });
 
-  exports.addPaperWorkNotification = functions.firestore
+exports.addPaperWorkNotification = functions.firestore
   .document("transactions/{tid}/paperwork/{name}")
   .onCreate(async (snapshot, content) => {
     const value = snapshot.data();
@@ -417,7 +452,8 @@ exports.updatePeopleNotification = functions.firestore
               isRead: false,
               type: "DOC_UPLOADED",
               name: content.params.name,
-              uploadedBy: value.creator
+              uploadedBy: value.creator,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             });
         });
       })
@@ -427,7 +463,7 @@ exports.updatePeopleNotification = functions.firestore
       });
   });
 
-  exports.deletePaperWorkNotification = functions.firestore
+exports.deletePaperWorkNotification = functions.firestore
   .document("transactions/{tid}/paperwork/{name}")
   .onDelete(async (snapshot, content) => {
     const value = snapshot.data();
@@ -449,7 +485,8 @@ exports.updatePeopleNotification = functions.firestore
               isRead: false,
               type: "DOC_DELETED",
               name: content.params.name,
-              uploadedBy: value.creator
+              uploadedBy: value.creator,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
             });
         });
       })
