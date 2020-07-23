@@ -246,7 +246,8 @@ exports.createTaskNotification = functions.firestore
             .collection("notifications")
             .doc(content.params.taskid)
             .set({
-              type: "Task Create",
+              isRead: false,
+              type: "TASK_CREATE",
               taskName: snapshot.data().title,
               date: snapshot.data().date,
               assignedBy: snapshot.data().assignedBy,
@@ -280,7 +281,8 @@ exports.updateTaskNotification = functions.firestore
             .collection("notifications")
             .doc(content.params.taskid)
             .set({
-              type: "Task Updated",
+              isRead: false,
+              type: "TASK_UPDATE",
               taskName: newValue.title,
               date: newValue.date,
               assignedBy: newValue.assignedBy,
@@ -314,7 +316,8 @@ exports.deleteTaskNotification = functions.firestore
             .collection("notifications")
             .doc(content.params.taskid)
             .set({
-              type: "Task Deleted",
+              isRead: false,
+              type: "TASK_DELETE",
               taskName: value.title,
               deletedBy: value.assignedBy.name,
             });
@@ -345,7 +348,8 @@ exports.addPeopleNotification = functions.firestore
             .collection("notifications")
             .doc(content.params.email)
             .set({
-              type: "Person Added",
+              isRead: false,
+              type: "INVITATION_SENT",
               name: value.name,
               role: value.role,
               accepted: value.accepted,
@@ -377,7 +381,8 @@ exports.updatePeopleNotification = functions.firestore
             .collection("notifications")
             .doc(content.params.email)
             .set({
-              type: "Invitation Accepted",
+              isRead: false,
+              type: "INVITATION_ACCEPTED",
               name: value.name,
               role: value.role,
               accepted: value.accepted,
@@ -409,7 +414,8 @@ exports.updatePeopleNotification = functions.firestore
             .collection("notifications")
             .doc(`Document${content.params.name}`)
             .set({
-              type: "Document Added",
+              isRead: false,
+              type: "DOC_UPLOADED",
               name: content.params.name,
               uploadedBy: value.creator
             });
@@ -440,7 +446,8 @@ exports.updatePeopleNotification = functions.firestore
             .collection("notifications")
             .doc(`Document${content.params.name}`)
             .set({
-              type: "Document Removed",
+              isRead: false,
+              type: "DOC_DELETED",
               name: content.params.name,
               uploadedBy: value.creator
             });

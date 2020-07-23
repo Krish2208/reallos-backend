@@ -10,20 +10,39 @@ exports.createTransaction = (req, res) => {
     admin: req.user.uid,
     createdAt: new Date().toISOString(),
   };
-  db.collection("transactions")
+  let id;
+  let userData;
+  db.doc(`users/${newTransaction.admin}`).get().then((userDoc)=>{
+    userData = userDoc.data()
+    return db.collection("transactions")
     .add(newTransaction)
     .then((doc) => {
       console.log(doc.id);
-      return res.json({
-        id: `${doc.id}`,
-      });
+      id = doc.id;
+      return id
+    })
+    .then((id)=>{
+      return db.doc(`transactions/${id}`).collection("people").doc(userData.email).set({
+        email: userData.email,
+        name: `${userData.firstName} ${userData.lastName}`,
+        role: userData.role,
+        uid: newTransaction.admin,
+        accepted: true,
+      })
+    })
+    .then(()=>{
+      return res.json({id: id})
     })
     .catch((err) => {
       console.log(err);
       return res.status(500).json({ error: err.code });
     });
+  })
+  .catch((err) => {
+      console.log(err);
+      return res.status(500).json({ error: err.code });
+    });
 };
-
 
 exports.deleteTransaction = (req, res) => {
   const document = db.doc(`/transactions/${req.params.tid}`);
@@ -46,7 +65,6 @@ exports.deleteTransaction = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
-
 
 exports.updateTransaction = (req, res) => {
   const document = db.doc(`/transactions/${req.params.tid}`);
@@ -80,12 +98,11 @@ exports.updateTransaction = (req, res) => {
     });
 };
 
-
 exports.readTransaction = (req, res) => {
   const tid = req.params.tid;
   var status = {
     all: 0,
-    completed: 0
+    completed: 0,
   };
   var obj;
 
@@ -94,33 +111,33 @@ exports.readTransaction = (req, res) => {
     .get()
     .then((doc) => {
       if (doc.exists) {
-        obj = doc.data()
-        return db.collection(`transactions/${tid}/tasks`).get()
-        .then((snapshot)=>{
-          return snapshot.forEach((doc)=>{
-            if(doc.data().completed){
-              status.all++;
-              status.completed++;
-            }
-            else{
-              status.all++;
-            }
-          })
-        })
+        obj = doc.data();
+        return db
+          .collection(`transactions/${tid}/tasks`)
+          .get()
+          .then((snapshot) => {
+            return snapshot.forEach((doc) => {
+              if (doc.data().completed) {
+                status.all++;
+                status.completed++;
+              } else {
+                status.all++;
+              }
+            });
+          });
       } else {
         console.log("Transaction does not exists");
         return res.json({ error: "Transaction does not exists" });
       }
     })
-    .then(()=>{
-      return res.json(Object.assign(obj, status))
+    .then(() => {
+      return res.json(Object.assign(obj, status));
     })
     .catch((err) => {
       console.log(err);
       return res.status(500).json({ error: err.code });
     });
 };
-
 
 exports.addPeople = (req, res) => {
   const tid = req.params.tid;
@@ -144,17 +161,23 @@ exports.addPeople = (req, res) => {
       }
     })
     .then(() => {
-      return invitationMail(newPeople.name, newPeople.email, tid, transactionData.name, transactionData.address, newPeople.role);
+      return invitationMail(
+        newPeople.name,
+        newPeople.email,
+        tid,
+        transactionData.name,
+        transactionData.address,
+        newPeople.role
+      );
     })
     .then(() => {
       return res.json({ id: newPeople.email });
     })
     .catch((err) => {
-      console.log(err)
+      console.log(err);
       return res.status(500).json({ error: err.message });
     });
 };
-
 
 exports.deletePeople = (req, res) => {
   const person = {
@@ -175,7 +198,6 @@ exports.deletePeople = (req, res) => {
     });
 };
 
-
 exports.addTransactionToUser = (req, res) => {
   const tid = req.params.tid;
   const transactionList = [req.params.tid];
@@ -186,11 +208,13 @@ exports.addTransactionToUser = (req, res) => {
     .then((doc) => {
       if (!doc.exists) {
         return userDoc.set({
-          transactions: transactionList
-        })
+          transactions: transactionList,
+        });
       } else {
+        var txnList = doc.data().transactions;
+        txnList.push(tid);
         return userDoc.update({
-          transactions: firebase.firestore.FieldValue.arrayUnion(tid)
+          transactions: txnList,
         });
       }
     })
@@ -205,7 +229,6 @@ exports.addTransactionToUser = (req, res) => {
     });
 };
 
-
 exports.addMultiplePeople = (req, res) => {
   const tid = req.params.tid;
   const people = req.body.people;
@@ -218,7 +241,14 @@ exports.addMultiplePeople = (req, res) => {
       } else {
         people.forEach((person) => {
           txnDoc.collection("people").doc(person.email).set(person);
-          invitationMail(person.name, person.email, tid, doc.data().name, doc.data().address, person.role);
+          invitationMail(
+            person.name,
+            person.email,
+            tid,
+            doc.data().name,
+            doc.data().address,
+            person.role
+          );
         });
         return res.json({ message: "All added successfully" });
       }
@@ -227,7 +257,6 @@ exports.addMultiplePeople = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
-
 
 exports.getAllTransaction = (req, res) => {
   const uid = req.params.uid;
@@ -242,7 +271,6 @@ exports.getAllTransaction = (req, res) => {
       return res.status(500).json({ error: err.code });
     });
 };
-
 
 exports.getAllPeople = (req, res) => {
   const tid = req.params.tid;
@@ -266,33 +294,37 @@ exports.getAllPeople = (req, res) => {
     });
 };
 
-
 exports.removeTransactionFromAllUser = (req, res) => {
-  mylist=[];
+  mylist = [];
   const tid = req.params.tid;
   db.collection("users")
-    .where("transactions", "array-contains",tid)
-    .then((doc)=>{
-      return res.json({message: doc })
+    .where("transactions", "array-contains", tid)
+    .then((doc) => {
+      return res.json({ message: doc });
     })
     .catch((err) => {
       return res.status(500).json({ error: err.code });
     });
 };
 
-exports.testarray = (req,res) => {
-  const query = firebase.firestore().collection("users").where('transactions', 'array-contains', req.params.tid);
+exports.testarray = (req, res) => {
+  const query = firebase
+    .firestore()
+    .collection("users")
+    .where("transactions", "array-contains", req.params.tid);
   var list = [];
-  query.get().then(snapshot=>{
-    return snapshot.docs.forEach(doc=>{
-      list.push(doc.data())
-      console.log(doc.id, doc.data())
+  query
+    .get()
+    .then((snapshot) => {
+      return snapshot.docs.forEach((doc) => {
+        list.push(doc.data());
+        console.log(doc.id, doc.data());
+      });
     })
-  })
-  .then(()=>{
-    return res.json({message: "success", data: list})
-  })
-  .catch((err)=>{
-    return res.json({error: err.message})
-  })
-}
+    .then(() => {
+      return res.json({ message: "success", data: list });
+    })
+    .catch((err) => {
+      return res.json({ error: err.message });
+    });
+};
