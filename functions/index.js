@@ -254,6 +254,7 @@ exports.createTaskNotification = functions.firestore
               assignedTo: snapshot.data().assignedTo,
               completed: snapshot.data().completed,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
             });
         });
       })
@@ -292,6 +293,7 @@ exports.updateTaskNotification = functions.firestore
                 assignedTo: newValue.assignedTo,
                 completed: newValue.completed,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                tid: content.params.tid,
               });
           });
         })
@@ -319,6 +321,7 @@ exports.updateTaskNotification = functions.firestore
                 assignedTo: newValue.assignedTo,
                 completed: newValue.completed,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                tid: content.params.tid,
               });
           });
         })
@@ -353,6 +356,7 @@ exports.deleteTaskNotification = functions.firestore
               taskName: value.title,
               deletedBy: value.assignedBy.name,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
             });
         });
       })
@@ -387,6 +391,7 @@ exports.addPeopleNotification = functions.firestore
               role: value.role,
               accepted: value.accepted,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
             });
         });
       })
@@ -421,6 +426,7 @@ exports.updatePeopleNotification = functions.firestore
               role: value.role,
               accepted: value.accepted,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
             });
         });
       })
@@ -454,6 +460,7 @@ exports.addPaperWorkNotification = functions.firestore
               name: content.params.name,
               uploadedBy: value.creator,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
             });
         });
       })
@@ -487,6 +494,7 @@ exports.deletePaperWorkNotification = functions.firestore
               name: content.params.name,
               uploadedBy: value.creator,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
             });
         });
       })
