@@ -244,8 +244,7 @@ exports.createTaskNotification = functions.firestore
             .collection("users")
             .doc(doc.id)
             .collection("notifications")
-            .doc(content.params.taskid)
-            .set({
+            .add({
               isRead: false,
               type: "TASK_CREATE",
               taskName: snapshot.data().title,
@@ -283,8 +282,7 @@ exports.updateTaskNotification = functions.firestore
               .collection("users")
               .doc(doc.id)
               .collection("notifications")
-              .doc(content.params.taskid)
-              .set({
+              .add({
                 isRead: false,
                 type: "TASK_COMPLETED",
                 taskName: newValue.title,
@@ -311,8 +309,7 @@ exports.updateTaskNotification = functions.firestore
               .collection("users")
               .doc(doc.id)
               .collection("notifications")
-              .doc(content.params.taskid)
-              .set({
+              .add({
                 isRead: false,
                 type: "TASK_UPDATE",
                 taskName: newValue.title,
@@ -349,8 +346,7 @@ exports.deleteTaskNotification = functions.firestore
             .collection("users")
             .doc(doc.id)
             .collection("notifications")
-            .doc(content.params.taskid)
-            .set({
+            .add({
               isRead: false,
               type: "TASK_DELETE",
               taskName: value.title,
@@ -367,7 +363,7 @@ exports.deleteTaskNotification = functions.firestore
   });
 
 exports.addPeopleNotification = functions.firestore
-  .document("transactions/{tid}/tasks/{email}")
+  .document("transactions/{tid}/people/{email}")
   .onCreate(async (snapshot, content) => {
     const value = snapshot.data();
     const query = firebase
@@ -383,8 +379,7 @@ exports.addPeopleNotification = functions.firestore
             .collection("users")
             .doc(doc.id)
             .collection("notifications")
-            .doc(content.params.email)
-            .set({
+            .add({
               isRead: false,
               type: "INVITATION_SENT",
               name: value.name,
@@ -402,7 +397,7 @@ exports.addPeopleNotification = functions.firestore
   });
 
 exports.updatePeopleNotification = functions.firestore
-  .document("transactions/{tid}/tasks/{email}")
+  .document("transactions/{tid}/people/{email}")
   .onUpdate(async (snapshot, content) => {
     const value = snapshot.after.data();
     const query = firebase
@@ -418,8 +413,7 @@ exports.updatePeopleNotification = functions.firestore
             .collection("users")
             .doc(doc.id)
             .collection("notifications")
-            .doc(content.params.email)
-            .set({
+            .add({
               isRead: false,
               type: "INVITATION_ACCEPTED",
               name: value.name,
@@ -444,6 +438,10 @@ exports.addPaperWorkNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
+    
+    const user = firebase.firestore().collection("users").where('email', '==', value.creator);
+    const userDetails = await user.get();
+    const userName = `${userDetails.docs[0].firstName} ${userDetails.docs[0].lastName}`;
     await query
       .get()
       .then((querySnapshot) => {
@@ -453,12 +451,11 @@ exports.addPaperWorkNotification = functions.firestore
             .collection("users")
             .doc(doc.id)
             .collection("notifications")
-            .doc(`Document${content.params.name}`)
-            .set({
+            .add({
               isRead: false,
               type: "DOC_UPLOADED",
               name: content.params.name,
-              uploadedBy: value.creator,
+              uploadedBy: userName,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
               tid: content.params.tid,
             });
@@ -487,12 +484,45 @@ exports.deletePaperWorkNotification = functions.firestore
             .collection("users")
             .doc(doc.id)
             .collection("notifications")
-            .doc(`Document${content.params.name}`)
-            .set({
+            .add({
               isRead: false,
               type: "DOC_DELETED",
               name: content.params.name,
               uploadedBy: value.creator,
+              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+              tid: content.params.tid,
+            });
+        });
+      })
+      .catch((err) => {
+        console.log(err);
+        return;
+      });
+  });
+
+  exports.updatePaperWorkNotification = functions.firestore
+  .document("transactions/{tid}/paperwork/{name}")
+  .onUpdate(async (snapshot, content) => {
+    const value = snapshot.after.data();
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    await query
+      .get()
+      .then((querySnapshot) => {
+        return querySnapshot.forEach((doc) => {
+          firebase
+            .firestore()
+            .collection("users")
+            .doc(doc.id)
+            .collection("notifications")
+            .add({
+              isRead: false,
+              type: "DOC_UPDATE",
+              name: content.params.name,
+              uploadedBy: value.creator,
+              lastModified: value.lastModified,
               timestamp: firebase.firestore.FieldValue.serverTimestamp(),
               tid: content.params.tid,
             });

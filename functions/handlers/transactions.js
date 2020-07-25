@@ -9,6 +9,7 @@ exports.createTransaction = (req, res) => {
     desc: req.body.desc,
     admin: req.user.uid,
     createdAt: new Date().toISOString(),
+    assistView: [],
   };
   let id;
   let userData;
