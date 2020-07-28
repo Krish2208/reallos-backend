@@ -8,6 +8,7 @@ const fs = require("fs");
 const gs = require("gs");
 const firebase = require("./utils/firebaseConfig");
 const app = require("express")();
+const isEqual = require("lodash.isequal");
 app.use(cors()); // using cors to for creating restful api
 
 const Auth = require("./utils/Auth");
@@ -235,32 +236,25 @@ exports.createTaskNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "TASK_CREATE",
-              taskName: snapshot.data().title,
-              date: snapshot.data().date,
-              assignedBy: snapshot.data().assignedBy,
-              assignedTo: snapshot.data().assignedTo,
-              completed: snapshot.data().completed,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
+
+    const querySnapshot = await query.get();
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "TASK_CREATE",
+          taskName: snapshot.data().title,
+          dueDate: snapshot.data().date,
+          assignedBy: snapshot.data().assignedBy.name,
+          assignedTo: snapshot.data().assignedTo.name,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    });
   });
 
 exports.updateTaskNotification = functions.firestore
@@ -273,59 +267,44 @@ exports.updateTaskNotification = functions.firestore
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
     if (newValue.completed === true && oldValue.completed === false) {
-      await query
-        .get()
-        .then((querySnapshot) => {
-          return querySnapshot.forEach((doc) => {
-            firebase
-              .firestore()
-              .collection("users")
-              .doc(doc.id)
-              .collection("notifications")
-              .add({
-                isRead: false,
-                type: "TASK_COMPLETED",
-                taskName: newValue.title,
-                date: newValue.date,
-                assignedBy: newValue.assignedBy,
-                assignedTo: newValue.assignedTo,
-                completed: newValue.completed,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                tid: content.params.tid,
-              });
+      const querySnapshot = await query.get();
+
+      return querySnapshot.forEach((doc) => {
+        firebase
+          .firestore()
+          .collection("users")
+          .doc(doc.id)
+          .collection("notifications")
+          .add({
+            isRead: false,
+            type: "TASK_COMPLETED",
+            taskName: newValue.title,
+            dueDate: newValue.date,
+            assignedBy: newValue.assignedBy.name,
+            assignedTo: newValue.assignedTo.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            tid: content.params.tid,
           });
-        })
-        .catch((err) => {
-          console.log(err);
-          return;
-        });
+      });
     } else {
-      await query
-        .get()
-        .then((querySnapshot) => {
-          return querySnapshot.forEach((doc) => {
-            firebase
-              .firestore()
-              .collection("users")
-              .doc(doc.id)
-              .collection("notifications")
-              .add({
-                isRead: false,
-                type: "TASK_UPDATE",
-                taskName: newValue.title,
-                date: newValue.date,
-                assignedBy: newValue.assignedBy,
-                assignedTo: newValue.assignedTo,
-                completed: newValue.completed,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                tid: content.params.tid,
-              });
+      const querySnapshot = await query.get();
+      return querySnapshot.forEach((doc) => {
+        firebase
+          .firestore()
+          .collection("users")
+          .doc(doc.id)
+          .collection("notifications")
+          .add({
+            isRead: false,
+            type: "TASK_UPDATE",
+            taskName: newValue.title,
+            dueDate: newValue.date,
+            assignedBy: newValue.assignedBy.name,
+            assignedTo: newValue.assignedTo.name,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            tid: content.params.tid,
           });
-        })
-        .catch((err) => {
-          console.log(err);
-          return;
-        });
+      });
     }
   });
 
@@ -337,29 +316,49 @@ exports.deleteTaskNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "TASK_DELETE",
-              taskName: value.title,
-              deletedBy: value.assignedBy.name,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
+    const querySnapshot = await query.get();
+
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "TASK_DELETE",
+          taskName: value.title,
+          deletedBy: value.assignedBy.name,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    });
+  });
+
+exports.deleteInvitation = functions.firestore
+  .document("transactions/{tid}/people/{email}")
+  .onDelete(async (snapshot, content) => {
+    const value = snapshot.data();
+    const query = firebase
+      .firestore()
+      .collection("users")
+      .where("transactions", "array-contains", content.params.tid);
+    const querySnapshot = await query.get();
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "INVITATION_RETRACTED",
+          name: value.name,
+          role: value.role,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
+        });
+    });
   });
 
 exports.addPeopleNotification = functions.firestore
@@ -370,30 +369,22 @@ exports.addPeopleNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "INVITATION_SENT",
-              name: value.name,
-              role: value.role,
-              accepted: value.accepted,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
+    const querySnapshot = await query.get();
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "INVITATION_SENT",
+          name: value.name,
+          role: value.role,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    });
   });
 
 exports.updatePeopleNotification = functions.firestore
@@ -404,30 +395,22 @@ exports.updatePeopleNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "INVITATION_ACCEPTED",
-              name: value.name,
-              role: value.role,
-              accepted: value.accepted,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
+    const querySnapshot = await query.get();
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "INVITATION_ACCEPTED",
+          name: value.name,
+          role: value.role,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    });
   });
 
 exports.addPaperWorkNotification = functions.firestore
@@ -438,33 +421,23 @@ exports.addPaperWorkNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    
-    const user = firebase.firestore().collection("users").where('email', '==', value.creator);
-    const userDetails = await user.get();
-    const userName = `${userDetails.docs[0].firstName} ${userDetails.docs[0].lastName}`;
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "DOC_UPLOADED",
-              name: content.params.name,
-              uploadedBy: userName,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
+
+    const querySnapshot = await query.get();
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "DOC_UPLOADED",
+          name: content.params.name,
+          uploadedBy: value.creator,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    });
   });
 
 exports.deletePaperWorkNotification = functions.firestore
@@ -475,61 +448,76 @@ exports.deletePaperWorkNotification = functions.firestore
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "DOC_DELETED",
-              name: content.params.name,
-              uploadedBy: value.creator,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
+    const querySnapshot = await query.get();
+    return querySnapshot.forEach((doc) => {
+      firebase
+        .firestore()
+        .collection("users")
+        .doc(doc.id)
+        .collection("notifications")
+        .add({
+          isRead: false,
+          type: "DOC_DELETED",
+          name: content.params.name,
+          uploadedBy: value.creator,
+          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          tid: content.params.tid,
         });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
-      });
+    });
   });
 
-  exports.updatePaperWorkNotification = functions.firestore
+exports.updatePaperWorkNotification = functions.firestore
   .document("transactions/{tid}/paperwork/{name}")
   .onUpdate(async (snapshot, content) => {
-    const value = snapshot.after.data();
+    const newValue = snapshot.after.data();
+    const oldValue = snapshot.before.data();
     const query = firebase
       .firestore()
       .collection("users")
       .where("transactions", "array-contains", content.params.tid);
-    await query
-      .get()
-      .then((querySnapshot) => {
-        return querySnapshot.forEach((doc) => {
-          firebase
-            .firestore()
-            .collection("users")
-            .doc(doc.id)
-            .collection("notifications")
-            .add({
-              isRead: false,
-              type: "DOC_UPDATE",
-              name: content.params.name,
-              uploadedBy: value.creator,
-              lastModified: value.lastModified,
-              timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-              tid: content.params.tid,
-            });
-        });
-      })
-      .catch((err) => {
-        console.log(err);
-        return;
+
+    if (isEqual(newValue.accessData, oldValue.accessData)) {
+      const querySnapshot = await query.get();
+      return querySnapshot.forEach((doc) => {
+        firebase
+          .firestore()
+          .collection("users")
+          .doc(doc.id)
+          .collection("notifications")
+          .add({
+            isRead: false,
+            type: "DOC_UPDATE",
+            name: content.params.name,
+            uploadedBy: newValue.creator,
+            lastModifiedBy: newValue.lastModified.uid,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+            tid: content.params.tid,
+          });
       });
+    } else {
+      const newPermission = newValue.accessData;
+      const oldPermission = oldValue.accessData;
+
+      const querySnapshot = await query.get();
+      Object.keys(newPermission).forEach((key) => {
+        if (newPermission[key] !== oldPermission[key]) {
+          return querySnapshot.forEach((doc) => {
+            firebase
+              .firestore()
+              .collection("users")
+              .doc(doc.id)
+              .collection("notifications")
+              .add({
+                isRead: false,
+                type: "DOC_PERM_CHANGED",
+                email: key,
+                access: newPermission[key],
+                name: content.params.name,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                tid: content.params.tid,
+              });
+          });
+        }
+      });
+    }
   });

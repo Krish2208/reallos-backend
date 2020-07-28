@@ -13,15 +13,16 @@
     "node": "10"
   },
   "dependencies": {
+    "@google-cloud/storage": "^5.1.2",
     "@sendgrid/mail": "^7.2.1",
+    "child-process-promise": "^2.2.1",
     "cors": "^2.8.5",
     "firebase": "^7.15.5",
     "firebase-admin": "^8.10.0",
     "firebase-functions": "^3.6.1",
-    "nodemailer": "^6.4.10",
-    "@google-cloud/storage": "^5.1.2",
-    "child-process-promise": "^2.2.1",
-    "gs": "https://github.com/sina-masnadi/node-gs/tarball/master"
+    "gs": "https://github.com/sina-masnadi/node-gs/tarball/master",
+    "lodash.isequal": "^4.5.0",
+    "nodemailer": "^6.4.10"
   },
   "devDependencies": {
     "eslint": "^5.12.0",
