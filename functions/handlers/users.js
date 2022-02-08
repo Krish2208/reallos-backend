@@ -239,7 +239,7 @@ exports.getNotifications = (req,res) => {
             }
         })
         .then(()=>{
-            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/reallos-test.appspot.com/o/${imageFileName}?alt=media`
+            const imageUrl = `https://firebasestorage.googleapis.com/v0/b/your-app.com/o/${imageFileName}?alt=media`
             return db.doc(`/users/${req.user.uid}`).update({
                 imageURL : imageUrl
             });
